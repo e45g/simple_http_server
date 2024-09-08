@@ -28,16 +28,10 @@ void print_routes() {
 }
 
 void handle_example(int client_fd, http_request *req){
-    handle_file_request(client_fd, "index.html");
+    handle_file_request(client_fd, "hello/index.html", 1);
 }
-
-void handle_json(int client_fd, http_request *req){
-    handle_file_request(client_fd, "asa.json");
-}
-
 
 void load_routes() {
-    add_route("GET", "/index.html", handle_example);
+    add_route("GET", "/hello", handle_example);
     add_route("GET", "/", handle_example);
-    add_route("GET", "/lol", handle_json);
 }

@@ -7,6 +7,8 @@
 #define FRONTEND "./frontend"
 #define BACKEND "./routes"
 
+#define CATCHALL "./catchall"
+
 typedef struct {
     char method[16];
     char path[256];
@@ -23,7 +25,7 @@ typedef struct s_route{
 
 void parse_http_req(char *buffer, http_request *http_req);
 const char *get_mime_type(const char *path);
-void handle_file_request(int client_fd, const char *file);
+void handle_file_request(int client_fd, const char *file, int flags);
 void handle_client(int client_fd);
 void handle_sigint(int sig);
 

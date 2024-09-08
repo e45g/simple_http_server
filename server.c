@@ -41,31 +41,88 @@ const char *get_mime_type(const char *path) {
     if(!ext) return "application/octet-stream";
 
     if (strcmp(ext, ".aac") == 0) return "audio/aac";
-    if (strcmp(ext, ".bpm") == 0) return "image/bmp";
+    if (strcmp(ext, ".abw") == 0) return "application/x-abiword";
+    if (strcmp(ext, ".apng") == 0) return "image/apng";
+    if (strcmp(ext, ".arc") == 0) return "application/x-freearc";
+    if (strcmp(ext, ".avif") == 0) return "image/avif";
+    if (strcmp(ext, ".avi") == 0) return "video/x-msvideo";
+    if (strcmp(ext, ".azw") == 0) return "application/vnd.amazon.ebook";
+    if (strcmp(ext, ".bin") == 0) return "application/octet-stream";
+    if (strcmp(ext, ".bmp") == 0) return "image/bmp";
+    if (strcmp(ext, ".bz") == 0) return "application/x-bzip";
+    if (strcmp(ext, ".bz2") == 0) return "application/x-bzip2";
+    if (strcmp(ext, ".cda") == 0) return "application/x-cdf";
+    if (strcmp(ext, ".csh") == 0) return "application/x-csh";
     if (strcmp(ext, ".css") == 0) return "text/css";
     if (strcmp(ext, ".csv") == 0) return "text/csv";
-    if (strcmp(ext, ".json") == 0) return "application/json";
-    if (strcmp(ext, ".png") == 0) return "image/png";
-    if (strcmp(ext, ".jpg") == 0 || strcmp(ext, ".jpeg") == 0) return "image/jpeg";
+    if (strcmp(ext, ".doc") == 0) return "application/msword";
+    if (strcmp(ext, ".docx") == 0) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    if (strcmp(ext, ".eot") == 0) return "application/vnd.ms-fontobject";
+    if (strcmp(ext, ".epub") == 0) return "application/epub+zip";
+    if (strcmp(ext, ".gz") == 0) return "application/gzip";
     if (strcmp(ext, ".gif") == 0) return "image/gif";
-    if (strcmp(ext, ".html") == 0) return "text/html";
+    if (strcmp(ext, ".htm") == 0 || strcmp(ext, ".html") == 0) return "text/html";
+    if (strcmp(ext, ".ico") == 0) return "image/vnd.microsoft.icon";
+    if (strcmp(ext, ".ics") == 0) return "text/calendar";
+    if (strcmp(ext, ".jar") == 0) return "application/java-archive";
+    if (strcmp(ext, ".jpeg") == 0 || strcmp(ext, ".jpg") == 0) return "image/jpeg";
     if (strcmp(ext, ".js") == 0) return "application/javascript";
+    if (strcmp(ext, ".json") == 0) return "application/json";
+    if (strcmp(ext, ".jsonld") == 0) return "application/ld+json";
+    if (strcmp(ext, ".mid") == 0 || strcmp(ext, ".midi") == 0) return "audio/midi";
+    if (strcmp(ext, ".mjs") == 0) return "application/javascript";
+    if (strcmp(ext, ".mp3") == 0) return "audio/mpeg";
+    if (strcmp(ext, ".mp4") == 0) return "video/mp4";
+    if (strcmp(ext, ".mpeg") == 0) return "video/mpeg";
+    if (strcmp(ext, ".mpkg") == 0) return "application/vnd.apple.installer+xml";
+    if (strcmp(ext, ".odp") == 0) return "application/vnd.oasis.opendocument.presentation";
+    if (strcmp(ext, ".ods") == 0) return "application/vnd.oasis.opendocument.spreadsheet";
+    if (strcmp(ext, ".odt") == 0) return "application/vnd.oasis.opendocument.text";
+    if (strcmp(ext, ".oga") == 0) return "audio/ogg";
+    if (strcmp(ext, ".ogv") == 0) return "video/ogg";
+    if (strcmp(ext, ".ogx") == 0) return "application/ogg";
+    if (strcmp(ext, ".opus") == 0) return "audio/ogg";
+    if (strcmp(ext, ".otf") == 0) return "font/otf";
+    if (strcmp(ext, ".png") == 0) return "image/png";
+    if (strcmp(ext, ".pdf") == 0) return "application/pdf";
+    if (strcmp(ext, ".php") == 0) return "application/x-httpd-php";
+    if (strcmp(ext, ".ppt") == 0) return "application/vnd.ms-powerpoint";
+    if (strcmp(ext, ".pptx") == 0) return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    if (strcmp(ext, ".rar") == 0) return "application/vnd.rar";
+    if (strcmp(ext, ".rtf") == 0) return "application/rtf";
+    if (strcmp(ext, ".sh") == 0) return "application/x-sh";
+    if (strcmp(ext, ".svg") == 0) return "image/svg+xml";
+    if (strcmp(ext, ".tar") == 0) return "application/x-tar";
+    if (strcmp(ext, ".tif") == 0 || strcmp(ext, ".tiff") == 0) return "image/tiff";
+    if (strcmp(ext, ".ts") == 0) return "video/mp2t";
+    if (strcmp(ext, ".ttf") == 0) return "font/ttf";
+    if (strcmp(ext, ".txt") == 0) return "text/plain";
+    if (strcmp(ext, ".vsd") == 0) return "application/vnd.visio";
+    if (strcmp(ext, ".wav") == 0) return "audio/wav";
+    if (strcmp(ext, ".weba") == 0) return "audio/webm";
+    if (strcmp(ext, ".webm") == 0) return "video/webm";
+    if (strcmp(ext, ".webp") == 0) return "image/webp";
+    if (strcmp(ext, ".woff") == 0) return "font/woff";
+    if (strcmp(ext, ".woff2") == 0) return "font/woff2";
+    if (strcmp(ext, ".xhtml") == 0) return "application/xhtml+xml";
+    if (strcmp(ext, ".xls") == 0) return "application/vnd.ms-excel";
+    if (strcmp(ext, ".xlsx") == 0) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    if (strcmp(ext, ".xml") == 0) return "application/xml";
+    if (strcmp(ext, ".xul") == 0) return "application/vnd.mozilla.xul+xml";
+    if (strcmp(ext, ".zip") == 0) return "application/zip";
+    if (strcmp(ext, ".3gp") == 0) return "video/3gpp";
+    if (strcmp(ext, ".3g2") == 0) return "video/3gpp2";
+    if (strcmp(ext, ".7z") == 0) return "application/x-7z-compressed";
+
+
+
     return "application/octet-stream";
 }
 
-char *remove_ext(const char *file) {
-    char *f = malloc(sizeof(file));
-    strcpy(f, file);
-    *(strchr(f, '.')) = '\0';
-    return f;
-}
-
-void handle_file_request(int client_fd, const char *file){
+void handle_file_request(int client_fd, const char *file, int flags){
     char path[256];
-    char *file_without_ext = remove_ext(file);
 
-    snprintf(path, sizeof(path), "%s/%s/%s", FRONTEND, file_without_ext, file);
-    free(file_without_ext);
+    snprintf(path, sizeof(path), "%s/%s", flags ? FRONTEND : CATCHALL, file);
 
     printf("%s\n", path);
     int opened_fd = open(path, O_RDONLY);
@@ -115,6 +172,11 @@ void handle_client(int client_fd){
         }
         current_route = current_route->next;
     }
+
+    if(strcmp(req.method, "GET") == 0){
+        handle_file_request(client_fd, req.path+1 , 0);
+    }
+
     handle_not_found(client_fd);
 }
 
