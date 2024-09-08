@@ -10,22 +10,27 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 
+#include "server.h"
 #include "routes.h"
 
-#define PORT 8080
-#define BUFFER_SIZE 1024
+route *routes = NULL;
 
-#define RESPONSE_NOT_FOUND "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
-#define RESPONSE_OK "HTTP/1.1 200 OK\r\n"
+void handle_not_found(int client_fd){
+        const char *response_body = "<html><body><h1>404 Not Found</h1><p>The requested resource was not found on this server.</p></body></html>";
+        char response_header[BUFFER_SIZE];
 
-#define FRONTEND "./frontend"
-#define BACKEND "./routes"
+        snprintf(response_header, sizeof(response_header),
+                 "HTTP/1.1 404 Not Found\r\n"
+                 "Content-Type: text/html\r\n"
+                 "Content-Length: %ld\r\n"
+                 "\r\n",
+                 strlen(response_body));
 
-typedef struct {
-    char method[16];
-    char path[256];
-    char version[16];
-} http_request;
+        send(client_fd, response_header, strlen(response_header), 0);
+        send(client_fd, response_body, strlen(response_body), 0);
+        close(client_fd);
+
+}
 
 void parse_http_req(char *buffer, http_request *http_req){
    sscanf(buffer, "%s %s %s", http_req->method, http_req->path, http_req->version);
@@ -48,11 +53,25 @@ const char *get_mime_type(const char *path) {
     return "application/octet-stream";
 }
 
+char *remove_ext(const char *file) {
+    char *f = malloc(sizeof(file));
+    strcpy(f, file);
+    *(strchr(f, '.')) = '\0';
+    return f;
+}
+
 void handle_file_request(int client_fd, const char *file){
-    int opened_fd = open(file, O_RDONLY);
+    char path[256];
+    char *file_without_ext = remove_ext(file);
+
+    snprintf(path, sizeof(path), "%s/%s/%s", FRONTEND, file_without_ext, file);
+    free(file_without_ext);
+
+    printf("%s\n", path);
+    int opened_fd = open(path, O_RDONLY);
     if (opened_fd == -1){
         printf("File not found.\n");
-        send(client_fd, RESPONSE_NOT_FOUND, sizeof(RESPONSE_NOT_FOUND) - 1, 0);
+        handle_not_found(client_fd);
         return;
     }
 
@@ -61,10 +80,11 @@ void handle_file_request(int client_fd, const char *file){
     char response_header[BUFFER_SIZE];
 
     snprintf(response_header, sizeof(response_header),
-             "%sContent-Type: %s\r\n"
+             "HTTP/1.1 200 OK\r\n"
+             "Content-Type: %s\r\n"
              "Content-Length: %ld\r\n"
              "\r\n",
-             RESPONSE_OK, get_mime_type(file), file_stat.st_size);
+             get_mime_type(file), file_stat.st_size);
 
     ssize_t offset = 0;
     send(client_fd, response_header, strlen(response_header), 0);
@@ -86,16 +106,16 @@ void handle_client(int client_fd){
     http_request req;
     parse_http_req(buffer, &req);
 
-    if(strcmp(req.method, "GET") == 0){
-        if (strlen(req.path) == 0 || strcmp(req.path, "/") == 0) {
-            strcpy(req.path, "/index.html");
+    route *current_route = routes;
+    while (current_route != NULL) {
+        if (strcmp(req.method, current_route->method) == 0 && strcmp(req.path, current_route->path) == 0) {
+            current_route->callback(client_fd, &req);
+            close(client_fd);
+            return;
         }
-        char *file = req.path + 1;
-        handle_file_request(client_fd, file);
-    } else {
-        send(client_fd, RESPONSE_NOT_FOUND, strlen(RESPONSE_NOT_FOUND), 0);
+        current_route = current_route->next;
     }
-    close(client_fd);
+    handle_not_found(client_fd);
 }
 
 void handle_sigint(int sig) {
@@ -131,6 +151,10 @@ int main(){
     };
 
     printf("Server listening on port %d\n", PORT);
+
+    load_routes();
+    printf("Routes loaded.\n\n");
+    print_routes();
 
     while(1){
         int client_fd = accept(s, NULL, NULL);
