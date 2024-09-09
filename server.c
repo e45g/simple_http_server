@@ -14,6 +14,7 @@
 #include "routes.h"
 
 route *routes = NULL;
+int sckt;
 
 void handle_not_found(int client_fd){
         const char *response_body = "<html><body><h1>404 Not Found</h1><p>The requested resource was not found on this server.</p></body></html>";
@@ -114,8 +115,6 @@ const char *get_mime_type(const char *path) {
     if (strcmp(ext, ".3g2") == 0) return "video/3gpp2";
     if (strcmp(ext, ".7z") == 0) return "application/x-7z-compressed";
 
-
-
     return "application/octet-stream";
 }
 
@@ -180,17 +179,32 @@ void handle_client(int client_fd){
     handle_not_found(client_fd);
 }
 
+void free_routes() {
+    route *current = routes;
+    while (current != NULL) {
+        route *next = current->next;
+        free(current);
+        current = next;
+    }
+    routes = NULL;
+}
+
+
 void handle_sigint(int sig) {
-    printf("\nShutting down server...\n");
+    printf("\nShutting down sever...\n");
+    if(sckt) {
+        close(sckt);
+    }
+    free_routes();
     exit(0);
 }
 
 int main(){
     signal(SIGINT, handle_sigint);
 	setbuf(stdout, NULL);
-    int s = socket(AF_INET, SOCK_STREAM, 0);
-    if (s < 0){
-        printf("Socket failed.");
+    sckt = socket(AF_INET, SOCK_STREAM, 0);
+    if (sckt < 0){
+        perror("Socket failed.");
         exit(EXIT_FAILURE);
     }
 
@@ -200,15 +214,22 @@ int main(){
         0,
     };
 
-    if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) != 0){
+    int opt = 1;
+    if (setsockopt(sckt, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        perror("setsockopt failed.");
+        close(sckt);
+        exit(EXIT_FAILURE);
+    }
+
+    if (bind(sckt, (struct sockaddr*)&addr, sizeof(addr)) != 0){
         perror("Bind failed.");
-        close(s);
+        close(sckt);
         exit(EXIT_FAILURE);
     };
 
-    if(listen(s, 10) != 0){
+    if(listen(sckt, 10) != 0){
         perror("Listen failed.");
-        close(s);
+        close(sckt);
         exit(EXIT_FAILURE);
     };
 
@@ -219,14 +240,15 @@ int main(){
     print_routes();
 
     while(1){
-        int client_fd = accept(s, NULL, NULL);
+        int client_fd = accept(sckt, NULL, NULL);
         if (client_fd < 0) {
             perror("Accept failed.");
-            close(s);
+            close(sckt);
             continue;
         }
         handle_client(client_fd);
     }
-    close(s);
+
+    close(sckt);
     return 0;
 }

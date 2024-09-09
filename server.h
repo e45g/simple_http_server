@@ -6,7 +6,6 @@
 
 #define FRONTEND "./frontend"
 #define BACKEND "./routes"
-
 #define CATCHALL "./catchall"
 
 typedef struct {
