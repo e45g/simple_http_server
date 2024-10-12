@@ -4,8 +4,7 @@
 #define PORT 3000
 #define BUFFER_SIZE 1024
 
-#define FRONTEND "./frontend"
-#define BACKEND "./routes"
+#define ROUTES "./routes"
 #define CATCHALL "./catchall"
 
 typedef struct {
@@ -20,6 +19,11 @@ typedef struct s_route{
     void (*callback)(int client_fd, http_request *req);
     struct s_route *next;
 } route;
+
+typedef struct {
+    int sckt;
+    route *route;
+} server_t;
 
 
 void parse_http_req(char *buffer, http_request *http_req);

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS Mocking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        .windows, .macos {
+            display: inline-block;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            width: 250px;
+            background-color: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .windows {
+            background-color: #0078d4;
+            color: white;
+        }
+        .macos {
+            background-color: #ddd;
+            color: black;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .windows button {
+            background-color: red;
+            color: white;
+            border: none;
+        }
+        .macos button {
+            background-color: #ddd;
+            color: black;
+            border: 1px solid #000;
+        }
+        .message {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>OS Mocking Central</h1>
+    <div class="windows">
+        <h2>Windows</h2>
+        <p>"Hold on, gotta install another update!"</p>
+        <button onclick="showWindowsError()">Simulate Windows</button>
+        <div class="message" id="windowsMessage"></div>
+    </div>
+    <div class="macos">
+        <h2>macOS</h2>
+        <p>"Look how shiny and expensive I am!"</p>
+        <button onclick="showMacJoke()">Simulate macOS</button>
+        <div class="message" id="macMessage"></div>
+    </div>
+
+    <script>
+        function showWindowsError() {
+            const message = document.getElementById('windowsMessage');
+            message.innerHTML = "🔔 *Ding* A critical error has occurred! Would you like to update your drivers now? 😬";
+        }
+
+        function showMacJoke() {
+            const message = document.getElementById('macMessage');
+            message.innerHTML = "💸 \"Your credit card was charged $999 for a stand. You're welcome.\" 😎";
+        }
+    </script>
+</body>
+</html>
+
+<!-- by ChatGPT -->
