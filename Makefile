@@ -1,5 +1,5 @@
 all:
-	@gcc server.c routes.c -o server
+	@gcc server.c routes.c utils.c -o server
 	@./server
 
 clean:

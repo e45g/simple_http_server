@@ -4,6 +4,8 @@
 #define PORT 3000
 #define BUFFER_SIZE 1024
 
+#define NOT_FOUND_MSG "File Not Found."
+
 #define ROUTES "./routes"
 #define CATCHALL "./catchall"
 
@@ -11,24 +13,28 @@ typedef struct {
     char method[16];
     char path[256];
     char version[16];
-} http_request;
+} HttpRequest;
 
-typedef struct s_route{
+typedef struct s_route {
     char method[16];
     char path[265];
-    void (*callback)(int client_fd, http_request *req);
+    void (*callback)(int client_fd, HttpRequest *req);
     struct s_route *next;
-} route;
+} Route;
+
+typedef struct {
+    char extension[16];
+    char mime_type[64];
+} MimeEntry;
 
 typedef struct {
     int sckt;
-    route *route;
-} server_t;
+    Route *route;
+} Server;
 
 
-void parse_http_req(char *buffer, http_request *http_req);
-const char *get_mime_type(const char *path);
-void handle_file_request(int client_fd, const char *file, int flags);
+void parse_http_req(char *buffer, HttpRequest *http_req);
+int serve_file(int client_fd, const char *path);
 void handle_client(int client_fd);
 void handle_sigint(int sig);
 

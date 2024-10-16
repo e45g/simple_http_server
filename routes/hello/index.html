@@ -14,7 +14,7 @@
         h1 {
             color: #333;
         }
-        .windows, .macos {
+        .windows, .macos, .linux {
             display: inline-block;
             margin: 20px;
             padding: 20px;
@@ -31,6 +31,10 @@
             background-color: #ddd;
             color: black;
         }
+        .linux {
+            background-color: #333;
+            color: lime;
+        }
         button {
             padding: 10px;
             font-size: 16px;
@@ -45,6 +49,11 @@
             background-color: #ddd;
             color: black;
             border: 1px solid #000;
+        }
+        .linux button {
+            background-color: lime;
+            color: black;
+            border: 1px solid lime;
         }
         .message {
             margin-top: 20px;
@@ -66,19 +75,61 @@
         <button onclick="showMacJoke()">Simulate macOS</button>
         <div class="message" id="macMessage"></div>
     </div>
+    <div class="linux">
+        <h2>Linux</h2>
+        <p>"You need to compile your own coffee maker."</p>
+        <button onclick="showLinuxJoke()">Simulate Linux</button>
+        <div class="message" id="linuxMessage"></div>
+    </div>
 
     <script>
+        const windowsJokes = [
+            "Welcome to Windows, where every update feels like Russian roulette for your drivers.",
+            "Your computer will restart in 4... 3... 2... just kidding, we’re installing 36 more updates.",
+            "Windows: Turning your high-end gaming PC into a glorified calculator during every update.",
+            "You clicked ‘Remind me later’ for the 500th time. We’ll update now while you’re presenting.",
+            "Windows: Where closing one app opens two more, and uninstalling one installs three."
+        ];
+
+        const macJokes = [
+            "macOS: Pay $4,000 to edit a Word document and feel stylish while doing it.",
+            "Your Mac is so sleek, it doesn’t even need useful ports anymore!",
+            "You must be this wealthy to use macOS. Please swipe your card again.",
+            "macOS: Helping you experience the joy of paying twice as much for half the performance.",
+            "macOS: The only system where you can spend $5,000 and still need to buy a mouse."
+        ];
+
+        const linuxJokes = [
+            "Linux: If you can read this, you’re 90% done fixing your problem. Probably.",
+            "Want to feel like a hacker in a movie? Use Linux and open 12 terminals.",
+            "Linux: For when you enjoy troubleshooting your operating system more than actually using it.",
+            "I use Linux because rebooting is for amateurs.",
+            "Linux: The only OS where you can spend 8 hours fixing sound, only to realize your speakers were off."
+        ];
+
+        function getRandomJoke(jokesArray) {
+            const randomIndex = Math.floor(Math.random() * jokesArray.length);
+            return jokesArray[randomIndex];
+        }
+
         function showWindowsError() {
             const message = document.getElementById('windowsMessage');
-            message.innerHTML = "🔔 *Ding* A critical error has occurred! Would you like to update your drivers now? 😬";
+            let joke = getRandomJoke(windowsJokes);
+            message.innerHTML = joke;
         }
 
         function showMacJoke() {
             const message = document.getElementById('macMessage');
-            message.innerHTML = "💸 \"Your credit card was charged $999 for a stand. You're welcome.\" 😎";
+            let joke = getRandomJoke(macJokes);
+            message.innerHTML = joke;
+        }
+
+        function showLinuxJoke() {
+            const message = document.getElementById('linuxMessage');
+            let joke = getRandomJoke(linuxJokes);
+            message.innerHTML = joke;
         }
     </script>
 </body>
 </html>
-
 <!-- by ChatGPT -->

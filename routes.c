@@ -4,40 +4,27 @@
 
 #include "server.h"
 
-extern server_t server;
+extern Server server;
 
-int match_route(char *route, char *handle){
-    char *route_cpy = strdup(route);
-    char *handle_cpy = strdup(handle);
-    char *saveptr1, *saveptr2;
-    char *r, *h;
-
-    r = strtok_r(route_cpy, "/", &saveptr1);
-    h = strtok_r(handle_cpy, "/", &saveptr2);
-
-
-    while(r != NULL && h != NULL){
-        if(strcmp(h, "*") != 0){
-            if(strcmp(r, h) != 0){
-                free(route_cpy);
-                free(handle_cpy);
-                return 0;
-            }
+int match_route(const char *route, const char *handle){
+    while(*route && *handle){
+        if(*handle == '*'){
+            route = strchr(route, '/');
+            handle++;
+            continue;
         }
-        r = strtok_r(NULL, "/", &saveptr1);
-        h = strtok_r(NULL, "/", &saveptr2);
+        else if(*handle != *route){
+            return 0;
+        }
+        handle++;
+        route++;
     }
 
-    int result = (r == NULL && h == NULL);
-
-    free(route_cpy);
-    free(handle_cpy);
-
-    return result;
+    return (*route == '\0' && (*handle == '\0' || *handle == '*'));
 }
 
-void add_route(const char *method, const char *path, void (*callback)(int client_fd, http_request *req)){
-    route *r = malloc(sizeof(route));
+void add_route(const char *method, const char *path, void (*callback)(int client_fd, HttpRequest *req)){
+    Route *r = malloc(sizeof(Route));
     if(r == NULL) {
         perror("Failed to allocate memory");
         return;
@@ -50,20 +37,29 @@ void add_route(const char *method, const char *path, void (*callback)(int client
 }
 
 void print_routes() {
-    route *current = server.route;
-    while (current != NULL) {
-        printf("Method: %s, Path: %s\n", current->method, current->path);
-        current = current->next;
+    for(Route *r = server.route; r; r = r->next){
+        printf("Route - %s: %s\n", r->method, r->path);
     }
 }
 
-void handle_example(int client_fd, http_request *req){
-    printf("%s\n", req->path);
-    handle_file_request(client_fd, "hello/index.html", 1);
+void free_routes(Route *route) {
+    for(Route *r = route; r; r = r->next){
+        free(r);
+    }
 }
 
+void handle_example(int client_fd, HttpRequest *req){
+    serve_file(client_fd, "hello/index.html");
+}
+
+void handle_post(int client_fd, HttpRequest *req){
+
+}
+
+
 void load_routes() {
-    add_route("GET", "/hello", handle_example);
     add_route("GET", "/", handle_example);
+    add_route("GET", "/hello", handle_example);
     add_route("GET", "/abc/*", handle_example);
+    add_route("POST", "/post_test", handle_post);
 }
