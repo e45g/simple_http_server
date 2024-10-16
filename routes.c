@@ -7,20 +7,25 @@
 extern Server server;
 
 int match_route(const char *route, const char *handle){
-    while(*route && *handle){
-        if(*handle == '*'){
-            route = strchr(route, '/');
-            handle++;
+    const char *r = route;
+    const char *h = handle;
+    while(*r && *h){
+        if(*h == '*'){
+            r = strchr(r, '/');
+            if(!r){
+                return 1;
+            }
+            h++;
             continue;
         }
-        else if(*handle != *route){
+        else if(*h != *r){
             return 0;
         }
-        handle++;
-        route++;
+        h++;
+        r++;
     }
 
-    return (*route == '\0' && (*handle == '\0' || *handle == '*'));
+    return (*r == '\0' && (*h == '\0' || *h == '*'));
 }
 
 void add_route(const char *method, const char *path, void (*callback)(int client_fd, HttpRequest *req)){
