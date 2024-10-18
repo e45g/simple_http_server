@@ -23,6 +23,7 @@ MimeEntry mime_types[] = {
         {".jpg", "image/jpeg"},
         {".gif", "image/gif"},
         {".txt", "text/plain"},
+        {".json", "application/json"}
 };
 
 void handle_error(char *msg, int sckt){
@@ -64,13 +65,16 @@ const char *get_mime_type(const char *path) {
 
 int serve_file(int client_fd, const char *path){
     char p[512];
-    snprintf(p, 512, "%s/%s", ROUTES, path);
+
+    snprintf(p, 512, "%s/%s", get_routes_dir(), path);
     LOG("Path: %s", p);
     int filefd = open(p, O_RDONLY);
+
     if (filefd == -1) {
-        snprintf(p, 512, "%s/%s", CATCHALL, path);
+        snprintf(p, 512, "%s/%s", get_public_dir(), path);
         LOG("Path: %s", p);
         filefd = open(p, O_RDONLY);
+
         if(filefd == -1){
             send_error_response(client_fd, 404, NOT_FOUND_MSG);
             return -1;
@@ -146,7 +150,10 @@ void handle_sigint(int sig) {
 }
 
 int main(){
+    load_env(".env");
     signal(SIGINT, handle_sigint);
+
+    const int PORT = get_port();
 
     int sckt = socket(AF_INET, SOCK_STREAM, 0);
     if (sckt < 0) handle_error("Socket creation falied.", -1);

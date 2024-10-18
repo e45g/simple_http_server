@@ -1,13 +1,9 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#define PORT 1444
 #define BUFFER_SIZE 1024
 
 #define NOT_FOUND_MSG "File Not Found."
-
-#define ROUTES "./routes"
-#define CATCHALL "./public"
 
 typedef struct {
     char method[16];
