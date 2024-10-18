@@ -4,11 +4,16 @@
 #define BUFFER_SIZE 1024
 #define MAX_HEADERS 64
 
-enum ERR_TYPES {
-    NFOUND,
-    BADREQ,
-    INTERR,
-};
+typedef enum {
+    ERR_NOTFOUND,
+    ERR_BADREQ,
+    ERR_INTERR,
+} ErrorType;
+
+typedef struct {
+    int status_code;
+    const char *message;
+} ErrorInfo;
 
 typedef struct {
     char *name;
@@ -41,7 +46,8 @@ typedef struct {
 } Server;
 
 
-int parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req);
+void free_http_req(HttpRequest *req);
+void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req);
 int serve_file(int client_fd, const char *path);
 void handle_client(int client_fd);
 void handle_sigint(int sig);

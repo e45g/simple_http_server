@@ -48,8 +48,11 @@ void print_routes() {
 }
 
 void free_routes(Route *route) {
-    for(Route *r = route; r; r = r->next){
-        free(r);
+    Route *current = server.route;
+    while(current){
+        Route *tmp = current->next;
+        free(current);
+        current = tmp;
     }
 }
 

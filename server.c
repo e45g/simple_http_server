@@ -32,34 +32,28 @@ void handle_critical_error(char *msg, int sckt){
     exit(EXIT_FAILURE);
 }
 
-void send_error_response(int client_fd, int error_type){
-    int status_code;
-    char msg[128];
-
-    switch (error_type) {
-        case NFOUND:
-            status_code = 404;
-            strcpy(msg, "File Not Found.");
-            LOG("%d %s", status_code, msg);
-            break;
-
-        case BADREQ:
-            status_code = 400;
-            strcpy(msg, "Bad Request.");
-            break;
-
-        case INTERR:
-            status_code = 500;
-            strcpy(msg, "Internal Server Error.");
-            break;
+ErrorInfo get_error_info(ErrorType err){
+    switch(err) {
+        case ERR_NOTFOUND:
+             return (ErrorInfo){404, "File Not Found."};
+        case ERR_BADREQ:
+            return (ErrorInfo){400, "Bad Request."};
+        case ERR_INTERR:
+            return (ErrorInfo){500, "Internal Server Error."};
+        default:
+            return (ErrorInfo){500, "Unknown Error."};
     }
+}
+
+void send_error_response(int client_fd, int error_type){
+    ErrorInfo error_info = get_error_info(error_type);
 
     char body[512];
-    snprintf(body, sizeof(body), "<html><body><h1>%d %s</h1></body></html>", status_code, msg);
+    snprintf(body, sizeof(body), "<html><body><h1>%d %s</h1></body></html>", error_info.status_code, error_info.message);
 
     char response[1024];
     snprintf(response, sizeof(response), "HTTP/1.1 %d %s\r\nContent-Type: text/html\r\nContent-Length: %zu\r\n\r\n%s",
-             status_code, msg, strlen(body), body);
+             error_info.status_code, error_info.message, strlen(body), body);
     send(client_fd, response, strlen(response), 0);
 }
 
@@ -73,65 +67,73 @@ int validate_request(const HttpRequest *req){
     return strlen(req->path) > 0 && strlen(req->method) > 0 && strlen(req->version) > 0;
 }
 
-int parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
+void handle_parsing_error(int client_fd, char *buf, HttpRequest *req,  ErrorType error_type){
+    free(buf);
+    free_http_req(req);
+    send_error_response(client_fd, error_type);
+
+}
+
+void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
     char *buf = strdup(buffer);
     if(!buf) {
         perror("Memory allocation failed. (parse_http_req)");
-        return -2;
+        handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
+        return;
     }
 
     char *line_end = strstr(buf, "\r\n");
     if(!line_end) {
-        free(buf);
-        return -1;
+        handle_parsing_error(client_fd, buf, http_req, ERR_BADREQ);
+        return;
     }
 
     *line_end = '\0';
 
     char *method_end = strchr(buf, ' ');
     if(!method_end) {
-        free(buf);
-        return -1;
+        handle_parsing_error(client_fd, buf, http_req, ERR_BADREQ);
+        return;
     }
 
     *method_end = '\0';
     http_req->method = strdup(buf);
     if(!http_req->method){
         perror("Mem allocation failed. (method)");
-        free(buf);
-        return -2;
+        handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
+        return;
     }
 
     char *path_start = method_end + 1;
     char *path_end = strchr(path_start, ' ');
     if(!path_end){
-        free(buf);
-        return -1;
+        handle_parsing_error(client_fd, buf, http_req, ERR_BADREQ);
+        return;
     }
 
     *path_end = '\0';
     http_req->path = strdup(path_start);
     if(!http_req->path){
         perror("Mem allocation failed. (path)");
-        free(buf);
-        return -2;
+        handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
+        return;
     }
 
     char *version_start = path_end + 1;
     http_req->version = strdup(version_start);
     if (!http_req->version) {
         perror("Memory allocation failed. (version)");
-        free(buf);
-        return -2;
+        handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
+        return;
     }
 
     http_req->headers_len = 0;
-    http_req->headers = malloc(sizeof(Header) * MAX_HEADERS);
+    http_req->headers = calloc(MAX_HEADERS, sizeof(Header));
 
     if(!http_req->headers){
         perror("Memory allocation failed. (headers)");
-        free(buf);
-        return -2;
+        handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
+        return;
     }
 
     char *header_line = line_end + 2;
@@ -166,8 +168,6 @@ int parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
         header_line = header_end + 2;
     }
     free(buf);
-
-    return 0;
 }
 
 void free_http_req(HttpRequest *req){
@@ -209,7 +209,7 @@ int serve_file(int client_fd, const char *path){
 
         if(filefd == -1){
             LOG("Not found");
-            send_error_response(client_fd, NFOUND);
+            send_error_response(client_fd, ERR_NOTFOUND);
             return -1;
         }
     }
@@ -217,7 +217,7 @@ int serve_file(int client_fd, const char *path){
     struct stat st;
     if (fstat(filefd, &st) == -1) {
         close(filefd);
-        send_error_response(client_fd, INTERR);
+        send_error_response(client_fd, ERR_INTERR);
         return -1;
     }
 
@@ -248,20 +248,10 @@ void handle_client(int client_fd){
     buffer[bytes_recieved] = '\0';
 
     HttpRequest req = {0};
-    int status = parse_http_req(client_fd, buffer, &req);
-
-    if (status < 0){
-        if(status == -1){
-            send_error_response(client_fd, BADREQ);
-        } else if (status == -2) {
-            send_error_response(client_fd, INTERR);
-        }
-        free_http_req(&req);
-        return;
-    }
+    parse_http_req(client_fd, buffer, &req);
 
     if(!validate_request(&req)){
-        send_error_response(client_fd, BADREQ);
+        send_error_response(client_fd, ERR_BADREQ);
         free_http_req(&req);
         return;
     }
@@ -278,7 +268,7 @@ void handle_client(int client_fd){
         serve_file(client_fd, req.path+1);
     }
 
-    send_error_response(client_fd, NFOUND);
+    send_error_response(client_fd, ERR_NOTFOUND);
     free_http_req(&req);
 }
 
