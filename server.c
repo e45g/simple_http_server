@@ -42,6 +42,12 @@ void send_error_response(int client_fd, int status_code, char *message){
     send(client_fd, response, strlen(response), 0);
 }
 
+void send_json_response(int client_fd, char *json){
+    char response[1024];
+    snprintf(response, sizeof(response), "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %zu\r\n\r\n%s", strlen(json), json);
+    send(client_fd, response, strlen(response), 0);
+}
+
 int validate_request(const HttpRequest *req){
     return strlen(req->path) > 0 && strlen(req->method) > 0 && strlen(req->version) > 0;
 }

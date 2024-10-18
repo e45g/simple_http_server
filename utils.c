@@ -37,7 +37,6 @@ int load_env(const char *path){
     return 1;
 }
 
-
 int get_port(){
     const char *port = getenv("PORT");
     return port ? strtol(port, NULL, 10) : 1444;

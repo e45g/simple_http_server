@@ -54,17 +54,14 @@ void free_routes(Route *route) {
 }
 
 void handle_example(int client_fd, HttpRequest *req){
-    serve_file(client_fd, "hello/index.html");
+    serve_file(client_fd, "example/index.html");
 }
 
 void handle_post(int client_fd, HttpRequest *req){
-
+    send_json_response(client_fd, "{\"status\": 200}");
 }
-
 
 void load_routes() {
     add_route("GET", "/", handle_example);
-    add_route("GET", "/hello", handle_example);
-    add_route("GET", "/abc/*", handle_example);
     add_route("POST", "/post_test", handle_post);
 }

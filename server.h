@@ -2,7 +2,6 @@
 #define SERVER_H
 
 #define BUFFER_SIZE 1024
-
 #define NOT_FOUND_MSG "File Not Found."
 
 typedef struct {
@@ -33,5 +32,7 @@ void parse_http_req(char *buffer, HttpRequest *http_req);
 int serve_file(int client_fd, const char *path);
 void handle_client(int client_fd);
 void handle_sigint(int sig);
+
+void send_json_response(int client_fd, char *json);
 
 #endif
