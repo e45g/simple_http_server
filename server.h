@@ -2,12 +2,25 @@
 #define SERVER_H
 
 #define BUFFER_SIZE 1024
-#define NOT_FOUND_MSG "File Not Found."
+#define MAX_HEADERS 64
+
+enum ERR_TYPES {
+    NFOUND,
+    BADREQ,
+    INTERR,
+};
 
 typedef struct {
-    char method[16];
-    char path[256];
-    char version[16];
+    char *name;
+    char *value;
+} Header;
+
+typedef struct {
+    char *method;
+    char *path;
+    char *version;
+    Header *headers;
+    int headers_len;
 } HttpRequest;
 
 typedef struct s_route {
@@ -28,7 +41,7 @@ typedef struct {
 } Server;
 
 
-void parse_http_req(char *buffer, HttpRequest *http_req);
+int parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req);
 int serve_file(int client_fd, const char *path);
 void handle_client(int client_fd);
 void handle_sigint(int sig);
