@@ -68,8 +68,13 @@ int serve_file(int client_fd, const char *path){
     LOG("Path: %s", p);
     int filefd = open(p, O_RDONLY);
     if (filefd == -1) {
-        send_error_response(client_fd, 404, NOT_FOUND_MSG);
-        return -1;
+        snprintf(p, 512, "%s/%s", CATCHALL, path);
+        LOG("Path: %s", p);
+        filefd = open(p, O_RDONLY);
+        if(filefd == -1){
+            send_error_response(client_fd, 404, NOT_FOUND_MSG);
+            return -1;
+        }
     }
 
     struct stat st;
