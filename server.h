@@ -26,6 +26,7 @@ typedef struct {
     char *version;
     Header *headers;
     int headers_len;
+    char *body;
 } HttpRequest;
 
 typedef struct s_route {

@@ -23,7 +23,8 @@ MimeEntry mime_types[] = {
         {".jpg", "image/jpeg"},
         {".gif", "image/gif"},
         {".txt", "text/plain"},
-        {".json", "application/json"}
+        {".json", "application/json"},
+        {".svg", "image/svg+xml"}
 };
 
 void handle_critical_error(char *msg, int sckt){
@@ -76,6 +77,7 @@ void handle_parsing_error(int client_fd, char *buf, HttpRequest *req,  ErrorType
 
 void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
     char *buf = strdup(buffer);
+
     if(!buf) {
         perror("Memory allocation failed. (parse_http_req)");
         handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
@@ -137,11 +139,18 @@ void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
     }
 
     char *header_line = line_end + 2;
+    char *body_start = NULL;
+
     while(*header_line && http_req->headers_len < MAX_HEADERS){
         char *header_end = strstr(header_line, "\r\n");
         if(!header_end) break;
 
         *header_end = '\0';
+
+        if (header_line == header_end) {
+            body_start = header_end + 2;
+            break;
+        }
 
         char *colon = strchr(header_line, ':');
         if(!colon){
@@ -167,6 +176,16 @@ void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
         http_req->headers_len++;
         header_line = header_end + 2;
     }
+
+    if(body_start){
+        http_req->body = strdup(body_start);
+        if(!http_req->body) {
+            perror("Memory allocation failed. (body)");
+            handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
+            return;
+        }
+    }
+
     free(buf);
 }
 
@@ -180,6 +199,7 @@ void free_http_req(HttpRequest *req){
         free(req->headers[i].value);
     }
     free(req->headers);
+    free(req->body);
 }
 
 const char *get_mime_type(const char *path) {
@@ -200,14 +220,14 @@ int serve_file(int client_fd, const char *path){
 
     snprintf(p, 512, "%s/%s", get_routes_dir(), path);
     LOG("Path: %s", p);
-    int filefd = open(p, O_RDONLY);
+    int file_fd = open(p, O_RDONLY);
 
-    if (filefd == -1) {
+    if (file_fd == -1) {
         snprintf(p, 512, "%s/%s", get_public_dir(), path);
         LOG("Path: %s", p);
-        filefd = open(p, O_RDONLY);
+        file_fd = open(p, O_RDONLY);
 
-        if(filefd == -1){
+        if(file_fd == -1){
             LOG("Not found");
             send_error_response(client_fd, ERR_NOTFOUND);
             return -1;
@@ -215,8 +235,8 @@ int serve_file(int client_fd, const char *path){
     }
 
     struct stat st;
-    if (fstat(filefd, &st) == -1) {
-        close(filefd);
+    if (fstat(file_fd, &st) == -1) {
+        close(file_fd);
         send_error_response(client_fd, ERR_INTERR);
         return -1;
     }
@@ -231,9 +251,9 @@ int serve_file(int client_fd, const char *path){
     send(client_fd, buffer, strlen(buffer), 0);
 
     ssize_t offset = 0;
-    sendfile(client_fd, filefd, &offset, st.st_size);
+    sendfile(client_fd, file_fd, &offset, st.st_size);
 
-    close(filefd);
+    close(file_fd);
     return 0;
 }
 
