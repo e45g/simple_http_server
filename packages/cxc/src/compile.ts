@@ -38,6 +38,10 @@ export async function compile(file: string, name: string) {
     prependFile += "#include <string.h>\n";
   }
 
+  if (prependFile.indexOf("#include <stdio.h>") === -1) {
+    prependFile += "#include <stdio.h>\n";
+  }
+
   if (prependFile.indexOf("#include <stdlib.h>") === -1) {
     prependFile += "#include <stdlib.h>\n";
   }
@@ -55,7 +59,7 @@ export async function compile(file: string, name: string) {
       );
     }
     currentContext = "text";
-    cxFuctionCode += `snprinf(output, sizeof(output), "%s%s", output, "`;
+    cxFuctionCode += `strcpy(output, "`;
   };
 
   const closeTextContext = () => {
@@ -108,7 +112,7 @@ export async function compile(file: string, name: string) {
       closeTextContext();
       openClosureContext();
       if (cxContent[index + 1] === "=") {
-        cxFuctionCode += `snprinf(output, sizeof(output), "%s%s", output, `;
+        cxFuctionCode += `strcpy(output, `;
 
         let i = 0;
         while (true) {

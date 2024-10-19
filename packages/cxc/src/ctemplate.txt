@@ -1,11 +1,15 @@
 %%PREPEND%%
-#include <%%NAME%%.h>
+#include "%%NAME%%.h"
 
 char *%%FUNC_NAME%%(%%PROPS_NAME%% props)
 {
 
-    char output[81920];
+    
+    char *output = malloc(sizeof(char) * 81920);
 
+    for(int i=0; i<sizeof(output); i++){
+        output[i] = '\0';
+    } 
 
 
     %%CODE%%

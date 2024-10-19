@@ -1,5 +1,5 @@
 ({
-    int x;
+    char x[50];
 })
 #include <stdlib.h>
 
@@ -12,9 +12,6 @@
     </head>
     <body>
     <h1>{=props.x}</h1>
-    {
-        props.x = 15 * props.x;
-    }
-    <p>then: {=props.x}</p> 
+
 </body>
 </html>
