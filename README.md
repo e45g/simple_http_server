@@ -4,12 +4,14 @@ This project implements a simple HTTP server in C.
 
 ## File Structure
 
-- `server.c`: Main server implementation, including request handling and error management.
-- `server.h`: Header file defining server structures and function prototypes.
-- `routes.c`: Route management, including adding and matching routes.
-- `routes.h`: Header file for route management functions.
-- `utils.c`: Utility functions for logging and environment variable management.
-- `utils.h`: Header file for utility functions.
+### server_src
+  - `server.c`: Main server implementation, including request handling and error management.
+  - `server.h`: Header file defining server structures and function prototypes.
+  - `routes.c`: Route management, including adding and matching routes.
+  - `routes.h`: Header file for route management functions.
+  - `utils.c`: Utility functions for logging and environment variable management.
+  - `utils.h`: Header file for utility functions.
+  - `lib/cJSON`: [cJSON](https://github.com/DaveGamble/cJSON) library.
 
 ## Compilation
 
