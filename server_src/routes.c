@@ -47,7 +47,7 @@ void print_routes() {
     }
 }
 
-void free_routes(Route *route) {
+void free_routes() {
     Route *current = server.route;
     while(current){
         Route *tmp = current->next;

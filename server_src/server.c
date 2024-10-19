@@ -293,7 +293,7 @@ void handle_client(int client_fd){
 }
 
 void handle_sigint(int sig) {
-    LOG("Shutting down server...");
+    LOG("Shutting down server... (%d)", sig);
     if(server.sckt) {
         close(server.sckt);
     }
@@ -313,9 +313,10 @@ int main(){
     server.route = NULL;
 
     const struct sockaddr_in addr = {
-        AF_INET,
-        htons(PORT),
-        0,
+        .sin_family = AF_INET,
+        .sin_port = htons(PORT),
+        .sin_addr = { INADDR_ANY },
+        .sin_zero = { 0 },
     };
 
     int opt = 1;
