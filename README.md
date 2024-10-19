@@ -4,7 +4,8 @@ This project implements a simple HTTP server in C.
 
 ## File Structure
 
-### server_src
+### src
+
   - `server.c`: Main server implementation, including request handling and error management.
   - `server.h`: Header file defining server structures and function prototypes.
   - `routes.c`: Route management, including adding and matching routes.

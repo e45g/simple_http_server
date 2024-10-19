@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "utils.h"
+#include "lib/cJSON/cJSON.h"
 
 void logg(long line, const char *file, const char *func, const char *format, ...){
     printf("LOG: [%s:%ld %s] ", file, line, func);
@@ -50,4 +51,24 @@ const char *get_routes_dir(){
 const char *get_public_dir(){
     const char *dir = getenv("PUBLIC_DIR");
     return dir ? dir : "./public";
+}
+
+const char *cjson_get_string(cJSON *json, char *key){
+    cJSON *value = cJSON_GetObjectItemCaseSensitive(json, key);
+
+    if(value->valuestring != NULL && cJSON_IsString(value)){
+        return value->valuestring;
+    }
+
+    return NULL;
+}
+
+int cjson_get_number(cJSON *json, char *key){
+    cJSON *value = cJSON_GetObjectItemCaseSensitive(json, key);
+
+    if(cJSON_IsNumber(value)){
+        return cJSON_GetNumberValue(value);
+    }
+
+    return 0;
 }

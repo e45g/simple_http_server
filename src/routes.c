@@ -1,8 +1,11 @@
+#include <bits/types/stack_t.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "server.h"
+#include "lib/cJSON/cJSON.h"
+#include "utils.h"
 
 extern Server server;
 
@@ -61,7 +64,15 @@ void handle_example(int client_fd, HttpRequest *req){
 }
 
 void handle_post(int client_fd, HttpRequest *req){
-    send_json_response(client_fd, "{\"status\": 200}");
+    cJSON *json = cJSON_Parse(req->body);
+
+    int status = cjson_get_number(json, "s");
+
+    char response[256];
+    snprintf(response, 256, "{\"status\": %d}", status);
+
+    send_json_response(client_fd, response);
+    cJSON_Delete(json);
 }
 
 void load_routes() {
