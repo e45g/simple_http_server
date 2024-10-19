@@ -13,3 +13,6 @@ $(TARGET): $(SRCS)
 
 clean:
 	rm -f $(TARGET)
+
+cxc: 
+	bun run packages/cxc/src/index.ts

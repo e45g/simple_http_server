@@ -1,0 +1,15 @@
+%%PREPEND%%
+#include <%%NAME%%.h>
+
+char *%%FUNC_NAME%%(%%PROPS_NAME%% props)
+{
+
+    char output[81920];
+
+
+
+    %%CODE%%
+
+    return output;
+}
+

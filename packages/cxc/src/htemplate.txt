@@ -1,0 +1,11 @@
+#ifndef %%FILEID%%
+#define %%FILEID%%
+%%PREPEND%%
+
+typedef struct {
+    %%PROPS%%
+} %%PROPS_NAME%%;
+
+char *%%FUNC_NAME%%(%%PROPS_NAME%% props);
+
+#endif
