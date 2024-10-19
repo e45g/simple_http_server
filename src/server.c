@@ -75,19 +75,19 @@ void handle_parsing_error(int client_fd, char *buf, HttpRequest *req,  ErrorType
 
 }
 
-void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
+int parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
     char *buf = strdup(buffer);
 
     if(!buf) {
         perror("Memory allocation failed. (parse_http_req)");
         handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
-        return;
+        return -1;
     }
 
     char *line_end = strstr(buf, "\r\n");
     if(!line_end) {
         handle_parsing_error(client_fd, buf, http_req, ERR_BADREQ);
-        return;
+        return -2;
     }
 
     *line_end = '\0';
@@ -95,7 +95,7 @@ void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
     char *method_end = strchr(buf, ' ');
     if(!method_end) {
         handle_parsing_error(client_fd, buf, http_req, ERR_BADREQ);
-        return;
+        return -2;
     }
 
     *method_end = '\0';
@@ -103,14 +103,14 @@ void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
     if(!http_req->method){
         perror("Mem allocation failed. (method)");
         handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
-        return;
+        return -1;
     }
 
     char *path_start = method_end + 1;
     char *path_end = strchr(path_start, ' ');
     if(!path_end){
         handle_parsing_error(client_fd, buf, http_req, ERR_BADREQ);
-        return;
+        return -2;
     }
 
     *path_end = '\0';
@@ -118,7 +118,7 @@ void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
     if(!http_req->path){
         perror("Mem allocation failed. (path)");
         handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
-        return;
+        return -1;
     }
 
     char *version_start = path_end + 1;
@@ -126,7 +126,7 @@ void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
     if (!http_req->version) {
         perror("Memory allocation failed. (version)");
         handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
-        return;
+        return -1;
     }
 
     http_req->headers_len = 0;
@@ -135,7 +135,7 @@ void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
     if(!http_req->headers){
         perror("Memory allocation failed. (headers)");
         handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
-        return;
+        return -1;
     }
 
     char *header_line = line_end + 2;
@@ -182,11 +182,12 @@ void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req){
         if(!http_req->body) {
             perror("Memory allocation failed. (body)");
             handle_parsing_error(client_fd, buf, http_req, ERR_INTERR);
-            return;
+            return -1;
         }
     }
 
     free(buf);
+    return 0;
 }
 
 void free_http_req(HttpRequest *req){
@@ -268,7 +269,10 @@ void handle_client(int client_fd){
     buffer[bytes_recieved] = '\0';
 
     HttpRequest req = {0};
-    parse_http_req(client_fd, buffer, &req);
+    int parse_result = parse_http_req(client_fd, buffer, &req);
+    if(parse_result != 0){
+        return;
+    }
 
     if(!validate_request(&req)){
         send_error_response(client_fd, ERR_BADREQ);

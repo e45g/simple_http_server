@@ -48,7 +48,7 @@ typedef struct {
 
 
 void free_http_req(HttpRequest *req);
-void parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req);
+int parse_http_req(int client_fd, const char *buffer, HttpRequest *http_req);
 int serve_file(int client_fd, const char *path);
 void handle_client(int client_fd);
 void handle_sigint(int sig);
