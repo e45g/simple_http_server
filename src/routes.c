@@ -77,8 +77,9 @@ void handle_example(int client_fd, HttpRequest *req)
 
 void handle_example2(int client_fd, HttpRequest *req)
 {
-    LayoutProps props = {x : 4};
+    LayoutProps props = {0};
 
+    strcpy(props.x, "ahoj");
     send_string(client_fd, render_layout(props));
 }
 

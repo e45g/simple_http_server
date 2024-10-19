@@ -59,7 +59,7 @@ export async function compile(file: string, name: string) {
       );
     }
     currentContext = "text";
-    cxFuctionCode += `strcpy(output, "`;
+    cxFuctionCode += `strcpy(output + strlen(output), "`;
   };
 
   const closeTextContext = () => {
@@ -112,7 +112,7 @@ export async function compile(file: string, name: string) {
       closeTextContext();
       openClosureContext();
       if (cxContent[index + 1] === "=") {
-        cxFuctionCode += `strcpy(output, `;
+        cxFuctionCode += `strcpy(output + strlen(output), `;
 
         let i = 0;
         while (true) {

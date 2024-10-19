@@ -1,5 +1,9 @@
 ({
     char x[50];
+    char y[10];
+    int a;
+    int b;
+    int c;
 })
 #include <stdlib.h>
 
@@ -12,6 +16,11 @@
     </head>
     <body>
     <h1>{=props.x}</h1>
+    {props.a = 2;}
+    {props.b = 3;}
+    {props.c = props.a + props.b;}
+    {snprintf(props.y, 10, "%d", props.c);}
+    <h1>{=props.y}</h1>
 
 </body>
 </html>
