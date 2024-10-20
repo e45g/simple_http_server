@@ -243,7 +243,7 @@ const char *get_mime_type(const char *path)
     if (!ext)
         return "application/octet-stream";
 
-    for (int i = 0; i < sizeof(mime_types) / sizeof(mime_types[0]); i++)
+    for (int i = 0; i < (int) (sizeof(mime_types) / sizeof(mime_types[0])); i++)
     {
         if (strcmp(mime_types[i].extension, ext) == 0)
         {

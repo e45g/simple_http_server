@@ -1,29 +1,26 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Isrc -Isrc/lib/cJSON -Isrc/tpl
+CFLAGS = -Wall -Wextra -Isrc -Isrc/lib/cJSON -Isrc/cxc
 SRC_DIR = src
 LIB_DIR = src/lib/cJSON
-SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c) $(wildcard src/tpl/*.c)
-HDRS = $(wildcard $(SRC_DIR)/*.h) $(wildcard $(LIB_DIR)/*.h)
+SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c) $(wildcard $(SRC_DIR)/*/*.c)
 
-TARGET = server
+SERVER = server
+CXC = cxc
 
-$(TARGET): $(SRCS)
+$(SERVER): $(SRCS)
 	make clean
-	bun run packages/cxc/src/index.ts
-	$(CC) $(CFLAGS) -o $@ $^
+	make cxc
+	./$(CXC) && $(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(SERVER)
+	rm -f $(CXC)
 
 cxc:
-	bun run packages/cxc/src/index.ts
+	$(CC) $(CFLAGS) -o $(CXC) src_cxc/main.c
 
 dev-serve:
 	@docker exec -it simple-http-server sh -c "cd /home/dev && make && ./server"
 
 dev-startup:
 	@docker run -v "./:/home/dev/" -p 3000:3000 -d -t --name simple-http-server gcc:latest
-
-dev-install:
-	@docker exec -it simple-http-server sh -c "curl -fsSL https://bun.sh/install | bash"
-

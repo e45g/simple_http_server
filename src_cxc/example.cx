@@ -1,6 +1,7 @@
 ({
-    char x[50];
+    int x;
 })
+#include <stdlib.h>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -10,7 +11,10 @@
         <title>Document</title>
     </head>
     <body>
-    <h1>{{props->x[0] = 'q';}}</h1>
-    <p>{{=props->x}}</p>
+    <h1>{=props.x}</h1>
+    {
+        props.x = 15 * props.x;
+    }
+    <p>then: {=props.x}</p>
 </body>
 </html>

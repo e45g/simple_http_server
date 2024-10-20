@@ -5,28 +5,24 @@
 #include "server.h"
 #include "lib/cJSON/cJSON.h"
 #include "utils.h"
-#include "tpl/layout.h"
+
+#include "cxc/layout.h"
 
 extern Server server;
 
-int match_route(const char *route, const char *handle)
-{
+int match_route(const char *route, const char *handle) {
     const char *r = route;
     const char *h = handle;
-    while (*r && *h)
-    {
-        if (*h == '*')
-        {
+    while (*r && *h) {
+        if (*h == '*') {
             r = strchr(r, '/');
-            if (!r)
-            {
+            if (!r) {
                 return 1;
             }
             h++;
             continue;
         }
-        else if (*h != *r)
-        {
+        else if (*h != *r) {
             return 0;
         }
         h++;
@@ -36,11 +32,9 @@ int match_route(const char *route, const char *handle)
     return (*r == '\0' && (*h == '\0' || *h == '*'));
 }
 
-void add_route(const char *method, const char *path, void (*callback)(int client_fd, HttpRequest *req))
-{
+void add_route(const char *method, const char *path, void (*callback)(int client_fd, HttpRequest *req)) {
     Route *r = malloc(sizeof(Route));
-    if (r == NULL)
-    {
+    if (r == NULL) {
         perror("Failed to allocate memory");
         return;
     }
@@ -51,16 +45,14 @@ void add_route(const char *method, const char *path, void (*callback)(int client
     server.route = r;
 }
 
-void print_routes()
-{
+void print_routes() {
     for (Route *r = server.route; r; r = r->next)
     {
         printf("Route - %s: %s\n", r->method, r->path);
     }
 }
 
-void free_routes()
-{
+void free_routes() {
     Route *current = server.route;
     while (current)
     {
@@ -70,21 +62,18 @@ void free_routes()
     }
 }
 
-void handle_example(int client_fd, HttpRequest *req)
-{
+void handle_example(int client_fd, HttpRequest *req __attribute__((unused))) {
     serve_file(client_fd, "example/index.html");
 }
 
-void handle_example2(int client_fd, HttpRequest *req)
-{
+void handle_cxc_example(int client_fd, HttpRequest *req __attribute__((unused))) {
     LayoutProps props = {0};
-
-    strcpy(props.x, "ahoj");
-    send_string(client_fd, render_layout(props));
+    char *output = render_layout(&props);
+    send_string(client_fd, output);
+    free(output);
 }
 
-void handle_post(int client_fd, HttpRequest *req)
-{
+void handle_post(int client_fd, HttpRequest *req) {
     cJSON *json = cJSON_Parse(req->body);
 
     int status = cjson_get_number(json, "s");
@@ -96,9 +85,8 @@ void handle_post(int client_fd, HttpRequest *req)
     cJSON_Delete(json);
 }
 
-void load_routes()
-{
+void load_routes() {
     add_route("GET", "/", handle_example);
-    add_route("GET", "/test", handle_example2);
+    add_route("GET", "/cxc", handle_cxc_example);
     add_route("POST", "/post_test", handle_post);
 }
