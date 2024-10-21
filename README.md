@@ -2,6 +2,10 @@
 
 This project implements a simple HTTP server in C.
 
+## TODO
+
+  - Make CXC less wonky.
+
 ## File Structure
 
 ### src

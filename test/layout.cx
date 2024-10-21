@@ -1,6 +1,8 @@
 ({
-    char x[50];
+    char x[1024];
 })
+#include <stdio.h>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -11,6 +13,10 @@
     </head>
     <body>
     <h1>{{props->x[0] = 'q';}}</h1>
+    {{
+
+     }}
     <p>{{=props->x}}</p>
+
 </body>
 </html>

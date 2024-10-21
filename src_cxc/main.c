@@ -22,7 +22,12 @@ typedef enum {
     H
 } Template;
 
-int replace_placeholder(char **buffer, char *placeholder, char *replacement) {
+typedef struct {
+    char placeholder[128];
+    char *replacement;
+} Placeholder;
+
+int replace_placeholder(char **buffer, const char *placeholder, const char *replacement) {
     ssize_t buffer_len = strlen(*buffer);
     ssize_t placeholder_len = strlen(placeholder);
     ssize_t replacement_len = strlen(replacement);
@@ -77,98 +82,55 @@ int get_file_length(FILE *f){
     return length;
 }
 
-void process_text(char *s){
-    char tmp[BUFFER_SIZE] = {0};
-    int i = 0;
-    int j = 0;
+void process_text(char *s) {
+    char *p = s;
+    while(*s != '\0'){
+        if(*s == '\n'){
+            memmove(s, s+1, strlen(s+1) + 1);
 
-    while(s[i] != '\0' && j < (int)sizeof(tmp) - 1){
-        if(s[i] == '\n'){
-            tmp[j++] = ' ';
         }
-        else if(s[i] == '"'){
-            tmp[j++] = '\\';
-            tmp[j++] = '"';
+        else if(*s == '"'){
+            memmove(s+2, s+1, strlen(s) + 1);
+            *s = '\\';
+            *(++s) = '"';
         }
-        else{
-            tmp[j++] = s[i];
-        }
-        i++;
+        s++;
     }
-
-    tmp[j] = '\0';
-    strncpy(s, tmp, strlen(tmp));
+    s = p;
 }
 
 void process_code(char *s){
     char tmp[BUFFER_SIZE] = {0};
     if(*s == '='){
-        strcpy(tmp, "\tstrcat(output, ");
-        strncat(tmp, s+1, strlen(s));
-        strcat(tmp, ");");
+
+        snprintf(tmp, BUFFER_SIZE, "\tstrcat(output, %s);", s+1);
     }
     else{
-        strcpy(tmp, "\t");
-        strncat(tmp, s, strlen(s));
+        snprintf(tmp, BUFFER_SIZE, "\t%s", s);
     }
-    strncpy(s, tmp, strlen(tmp));
+
+    strcpy(s, tmp);
     strcat(s, "\n");
 }
 
-void add_text(char *function_code, char *ptr, char *code_start){
-    strcat(function_code, "\tstrcat(output, \"");
-
-    char text[BUFFER_SIZE] = {0};
-    strncpy(text, ptr, code_start-ptr);
-
-    process_text(text);
-
-    strncat(function_code, text, strlen(text));
-    strcat(function_code, "\");\n");
-
-    response_length += strlen("strcat(output, \"") + strlen(text) + strlen("\");\n");
-}
-
 char *get_template(Template t){
-    if(t == C){
-        FILE *f = fopen(CTEMPLATE_PATH, "r");
-        if(f == NULL) {
-            perror("Could not open ctemplate.c");
-            return NULL;
-        }
-        long length = get_file_length(f);
-        if(length <= 0) {
-            perror("Length 0, ctemplate.c");
-            return NULL;
-        }
-        char *content = calloc(sizeof(char)*length+1, sizeof(char));
-        if(content == NULL){
-            perror("Error allocating memory.");
-            return NULL;
-        }
-        fread(content, 1, length, f);
-        return content;
+   FILE *f = fopen(t ? HTEMPLATE_PATH : CTEMPLATE_PATH, "r");
+   if(f == NULL) {
+        perror("Could not open template.");
+        return NULL;
     }
-    else if (t == H){
-        FILE *f = fopen(HTEMPLATE_PATH, "r");
-        if(f == NULL) {
-            perror("Could not open htemplate.h");
-            return NULL;
-        }
-        long length = get_file_length(f);
-        if(length <= 0) {
-            perror("Length 0, htemplate.h");
-            return NULL;
-        }
-        char *content = calloc(sizeof(char)*length+1, sizeof(char));
-        if(content == NULL){
-            perror("Error allocating memory.");
-            return NULL;
-        }
-        fread(content, 1, length, f);
-        return content;
+    long length = get_file_length(f);
+    if(length <= 0) {
+        perror("Length 0 template.");
+        return NULL;
     }
-    return NULL;
+    char *content = calloc(sizeof(char)*length+1, sizeof(char));
+    if(content == NULL){
+        perror("Error allocating memory.");
+        return NULL;
+    }
+    fread(content, 1, length, f);
+    return content;
 }
 
 int save_file(char *path, char *buf){
@@ -235,41 +197,30 @@ int generate(FILE *f, const char *filename, long length, char *ctemp, char *htem
     ptr = first_html+1;
 
 
-    while(ptr != NULL){
-        char *code_start = strstr(ptr, "{{");
-        if(code_start == NULL){
-            strcat(function_code, "\tstrcat(output, \"");
+    char *code_start, *code_end;
 
-            char text[BUFFER_SIZE] = {0};
-            strcpy(text, ptr);
-
-            process_text(text);
-
-            strcat(function_code, text);
-            strcat(function_code, "\");\n");
-
-            break;
-        }
-
-        add_text(function_code, ptr, code_start);
-
-        char *code_end = strstr(code_start, "}}")-2;
-        if(code_start == NULL){
-            perror("Could not find the }}");
-            free(content);
-            return -1;
-        }
+    while((code_start = strstr(ptr, "{{")) && (code_end = strstr(ptr, "}}"))){
+        char text[BUFFER_SIZE/2] = {0};
+        strncpy(text, ptr, code_start - ptr);
+        process_text(text);
+        snprintf(function_code + strlen(function_code), BUFFER_SIZE, "\tstrcat(output, \"%s\");\n", text);
+        response_length += strlen(text);
 
         char code[BUFFER_SIZE] = {0};
-        strncpy(code, code_start+2, code_end-code_start);
+        strncpy(code, code_start+2, code_end-code_start-2);
         process_code(code);
+        strcat(function_code, code);
+        response_length += 10+strlen(code);
 
-        strncat(function_code, code, strlen(code));
-        response_length += strlen(code);
-
-        ptr = code_end + 4;
+        ptr = code_end + 2;
     }
-    function_code[strlen(function_code)+1] = '\0';
+
+    if(ptr != NULL && *ptr != '\0') {
+        char remaining[BUFFER_SIZE];
+        strcpy(remaining, ptr);
+        process_text(remaining);
+    }
+
 
     char *c_output = malloc(BUFFER_SIZE);
     char *h_output = malloc(BUFFER_SIZE);
@@ -288,17 +239,44 @@ int generate(FILE *f, const char *filename, long length, char *ctemp, char *htem
     snprintf(response_length_buffer, 128, "%ld", response_length);
 
 
-    replace_placeholder(&c_output, "%%CODE%%", function_code);
-    replace_placeholder(&c_output, "%%FUNC_NAME%%", main_function_name);
-    replace_placeholder(&c_output, "%%PROPS_NAME%%", props_name);
-    replace_placeholder(&c_output, "%%PREPEND%%", prepend);
-    replace_placeholder(&c_output, "%%NAME%%", file_id);
-    replace_placeholder(&c_output, "%%RESPONSE_SIZE%%", response_length_buffer);
+    Placeholder c_placeholders[6] = {
+        {"%%CODE%%", function_code},
+        {"%%FUNC_NAME%%", main_function_name},
+        {"%%PROPS_NAME%%", props_name},
+        {"%%PREPEND%%", prepend},
+        {"%%NAME%%", file_id},
+        {"%%RESPONSE_SIZE%%", response_length_buffer}
+    };
 
-    replace_placeholder(&h_output, "%%FILE_ID%%", file_id);
-    replace_placeholder(&h_output, "%%PROPS%%", props_struct);
-    replace_placeholder(&h_output, "%%STRUCT_NAME%%", props_name);
-    replace_placeholder(&h_output, "%%FUNC_NAME%%", main_function_name);
+    for(int i = 0; i < 6; i++){
+        int r = replace_placeholder(&c_output, c_placeholders[i].placeholder, c_placeholders[i].replacement);
+        if(r < 0){
+            perror("Replace error");
+            free(c_output);
+            free(h_output);
+            free(content);
+            return -1;
+        }
+    }
+
+    Placeholder h_placeholders[4] = {
+        {"%%FILE_ID%%", file_id},
+        {"%%PROPS%%", props_struct},
+        {"%%STRUCT_NAME%%", props_name},
+        {"%%FUNC_NAME%%", main_function_name},
+    };
+
+    for(int i = 0; i < 4; i++){
+        int r = replace_placeholder(&h_output, h_placeholders[i].placeholder, h_placeholders[i].replacement);
+        if(r < 0){
+            perror("Replace error");
+            free(c_output);
+            free(h_output);
+            free(content);
+            return -1;
+        }
+    }
+
 
 
     char c_file[MAX_FILE_NAME] = {0};
