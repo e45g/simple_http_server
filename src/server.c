@@ -1,4 +1,5 @@
 #include <signal.h>
+#include <sys/epoll.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -24,7 +25,9 @@ MimeEntry mime_types[] = {
     {".gif", "image/gif"},
     {".txt", "text/plain"},
     {".json", "application/json"},
-    {".svg", "image/svg+xml"}};
+    {".svg", "image/svg+xml"},
+    {".pdf", "application/pdf"},
+};
 
 void handle_critical_error(char *msg, int sckt)
 {
@@ -49,6 +52,12 @@ ErrorInfo get_error_info(ErrorType err)
     }
 }
 
+int set_non_blocking(int sock) {
+    int flags = fcntl(sock, F_GETFL, 0);
+    if (flags == -1) return -1;
+    return fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+}
+
 void send_error_response(int client_fd, int error_type)
 {
     ErrorInfo error_info = get_error_info(error_type);
@@ -62,11 +71,11 @@ void send_error_response(int client_fd, int error_type)
     send(client_fd, response, strlen(response), 0);
 }
 
+//TODO: redo
 void send_string(int client_fd, char *str)
 {
-
-    char response[81920];
-    snprintf(response, sizeof(response), "HTTP/1.1 %d %s\r\nContent-Type: text/html\r\nContent-Length: %zu\r\n\r\n%s",
+    char response[4096];
+    snprintf(response, sizeof(response), "HTTP/1.1 %d %s\r\nContent-Type: text/html\r\nContent-Length: %zu\r\nConnection: close\r\n\r\n%s",
              200, "OK", strlen(str), str);
     send(client_fd, response, strlen(response), 0);
 }
@@ -259,14 +268,13 @@ int serve_file(int client_fd, const char *path)
     char p[512];
 
     snprintf(p, 512, "%s/%s", get_routes_dir(), path);
-    LOG("Path: %s", p);
     int file_fd = open(p, O_RDONLY);
 
     if (file_fd == -1)
     {
         snprintf(p, 512, "%s/%s", get_public_dir(), path);
-        LOG("Path: %s", p);
         file_fd = open(p, O_RDONLY);
+        LOG("%s", p);
 
         if (file_fd == -1)
         {
@@ -288,7 +296,8 @@ int serve_file(int client_fd, const char *path)
     const char *mime_type = get_mime_type(path);
     snprintf(buffer, BUFFER_SIZE, "HTTP/1.1 200 OK\r\n"
                                   "Content-Type: %s\r\n"
-                                  "Content-Length: %ld\r\n\r\n",
+                                  "Content-Length: %ld\r\n" \
+                                  "Connection: close\r\n\r\n",
              mime_type, st.st_size);
 
     send(client_fd, buffer, strlen(buffer), 0);
@@ -362,12 +371,15 @@ int main()
     signal(SIGINT, handle_sigint);
 
     const int PORT = get_port();
+    struct epoll_event ev, events[MAX_EVENTS];
 
     int sckt = socket(AF_INET, SOCK_STREAM, 0);
     if (sckt < 0)
         handle_critical_error("Socket creation falied.", -1);
     server.sckt = sckt;
     server.route = NULL;
+
+    set_non_blocking(sckt);
 
     const struct sockaddr_in addr = {
         .sin_family = AF_INET,
@@ -387,10 +399,20 @@ int main()
         handle_critical_error("Bind failed.", server.sckt);
     };
 
-    if (listen(sckt, 10) != 0)
+    if (listen(sckt, SOMAXCONN) != 0)
     {
         handle_critical_error("Listen failed.", server.sckt);
     };
+
+    int epoll_fd;
+    epoll_fd = epoll_create1(0);
+    if(epoll_fd == -1){
+        handle_critical_error("epoll_create1 failed.", epoll_fd);
+    }
+
+    ev.events = EPOLLIN;
+    ev.data.fd = sckt;
+    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sckt, &ev);
 
     printf("Server listening on port %d\n", PORT);
 
@@ -400,16 +422,26 @@ int main()
 
     while (1)
     {
-        int client_fd = accept(server.sckt, NULL, NULL);
-        if (client_fd < 0)
-        {
-            perror("Accept failed.");
-            continue;
+        int num_fds = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+        for(int i = 0; i < num_fds; i++){
+            if(events[i].data.fd == sckt){
+                int client_fd = accept(server.sckt, NULL, NULL);
+                set_non_blocking(client_fd);
+
+                ev.events = EPOLLIN | EPOLLET;
+                ev.data.fd = client_fd;
+                epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev);
+            }
+            else{
+                int client_fd = events[i].data.fd;
+                handle_client(client_fd);
+                epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
+                close(client_fd);
+            }
         }
-        handle_client(client_fd);
-        close(client_fd);
     }
 
     close(sckt);
+    close(epoll_fd);
     return 0;
 }

@@ -1,5 +1,5 @@
 server
 .env
 .vscode
-src/cxc
+src/cxc/*
 cxc

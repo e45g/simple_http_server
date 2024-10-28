@@ -3,6 +3,7 @@
 
 #define BUFFER_SIZE 1024
 #define MAX_HEADERS 64
+#define MAX_EVENTS 1024
 
 typedef enum
 {
