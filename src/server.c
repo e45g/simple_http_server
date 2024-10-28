@@ -14,6 +14,7 @@
 #include "server.h"
 #include "routes.h"
 #include "utils.h"
+#include "db.h"
 
 Server server;
 MimeEntry mime_types[] = {
