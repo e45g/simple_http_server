@@ -5,7 +5,6 @@
 
 #include "db.h"
 #include "server.h"
-#include "backend/api.h"
 #include "utils.h"
 
 extern Server server;
@@ -92,32 +91,7 @@ void free_routes(void) {
 }
 
 void handle_root(int client_fd, HttpRequest *req __attribute__((unused))) {
-    send_string(client_fd, "Hello TdA");
-}
-
-void handle_hello(int client_fd, HttpRequest *req __attribute__((unused))) {
-    serve_file(client_fd, "test/a.html");
-}
-void handle_test(int client_fd, HttpRequest *req __attribute__((unused))) {
-    char date[64];
-    get_current_time(date, 64, -300);
-
-    const char *params[] = {
-        date
-    };
-
-    DBResult *result = db_query("SELECT * FROM games WHERE created_at >= ?", params, 1);
-    if(!result) return;
-    printf("%d %d\n", result->num_cols, result->num_rows);
-    for(int i = 0; i < result->num_rows; i++){
-        for(int j = 0; j < result->num_cols; j++){
-            printf("%s ", result->rows[i][j]);
-        }
-        printf("\n");
-    }
-    free_result(result);
-
-    send_string(client_fd, "look at em");
+    send_string(client_fd, "Hello World");
 }
 
 void handle_log(int client_fd, HttpRequest *req __attribute__((unused))) {
@@ -126,18 +100,5 @@ void handle_log(int client_fd, HttpRequest *req __attribute__((unused))) {
 
 void load_routes(void) {
     add_route("GET", "/", handle_root);
-    add_route("GET", "/api", handle_api);
-
-    add_route("POST", "/api/v1/games", handle_game_creation);
-    add_route("PUT", "/api/v1/games/*", handle_game_update);
-    add_route("DELETE", "/api/v1/games/*", handle_game_deletion);
-    add_route("GET", "/api/v1/games/*", handle_get_game);
-    add_route("GET", "/api/v1/games", handle_list_games);
-
-    add_route("GET", "/test", handle_test);
-    add_route("GET", "/game", handle_hello);
-    add_route("GET", "/game/*", handle_hello);
-
     add_route("GET", "/log", handle_log);
-
 }
