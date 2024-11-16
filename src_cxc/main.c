@@ -10,10 +10,10 @@
 
 #define SAVE_PATH "./src/cxc/"
 
-#define PATH_TO_CX_FILES "./test"
+#define PATH_TO_CX_FILES "./cx_files"
 #define MAX_NAME 64
 #define MAX_FILE_NAME 128
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 1024*1024
 
 unsigned long response_length = 0;
 
@@ -103,7 +103,7 @@ void process_code(char *s){
     char tmp[BUFFER_SIZE] = {0};
     if(*s == '='){
 
-        snprintf(tmp, BUFFER_SIZE, "\tstrcat(output, %s);", s+1);
+        snprintf(tmp, BUFFER_SIZE, "\tfast_strcat(output, %s);", s+1);
     }
     else{
         snprintf(tmp, BUFFER_SIZE, "\t%s", s);
@@ -203,7 +203,7 @@ int generate(FILE *f, const char *filename, long length, char *ctemp, char *htem
         char text[BUFFER_SIZE/2] = {0};
         strncpy(text, ptr, code_start - ptr);
         process_text(text);
-        snprintf(function_code + strlen(function_code), BUFFER_SIZE, "\tstrcat(output, \"%s\");\n", text);
+        snprintf(function_code + strlen(function_code), BUFFER_SIZE, "\tfast_strcat(output, \"%s\");\n", text);
         response_length += strlen(text);
 
         char code[BUFFER_SIZE] = {0};
@@ -216,9 +216,11 @@ int generate(FILE *f, const char *filename, long length, char *ctemp, char *htem
     }
 
     if(ptr != NULL && *ptr != '\0') {
-        char remaining[BUFFER_SIZE];
+        char remaining[BUFFER_SIZE/2];
         strcpy(remaining, ptr);
         process_text(remaining);
+        snprintf(function_code + strlen(function_code), BUFFER_SIZE, "\tfast_strcat(output, \"%s\");\n", remaining);
+        response_length += strlen(remaining);
     }
 
 
@@ -305,7 +307,7 @@ int generate(FILE *f, const char *filename, long length, char *ctemp, char *htem
 
 
 
-int main(){
+int main(void){
     char *ctemplate = get_template(C);
     char *htemplate = get_template(H);
 
@@ -320,8 +322,6 @@ int main(){
         perror("Unable to open directory");
         return EXIT_FAILURE;
     }
-
-    printf("Starting CXC\n");
 
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_REG) {
@@ -363,3 +363,4 @@ int main(){
 
     return EXIT_SUCCESS;
 }
+

@@ -47,7 +47,42 @@ int db_exec(const char *query, db_callback callback, void *callback_data, char *
     }
 
     int rc = sqlite3_exec(db, query, callback, callback_data, error_msg);
+    if (rc != SQLITE_OK && error_msg && *error_msg) {
+        handle_db_error("execution", *error_msg);
+        sqlite3_free(*error_msg);
+    }
     return rc;
+}
+
+int db_execute(const char *sql, const char **params, int param_count) {
+    sqlite3_stmt *stmt;
+
+    if(!db){
+        handle_db_error("sql query execution", "Database not initialized");
+        return -1;
+    }
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
+        handle_db_error("execute_sql_with_placeholders", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    for (int i = 0; i < param_count; i++) {
+        if (sqlite3_bind_text(stmt, i + 1, params[i], -1, SQLITE_STATIC) != SQLITE_OK) {
+            handle_db_error("binding parameters", sqlite3_errmsg(db));
+            sqlite3_finalize(stmt);
+            return -1;
+        }
+    }
+
+    if (sqlite3_step(stmt) != SQLITE_DONE) {
+        handle_db_error("execution failed", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+
+    sqlite3_finalize(stmt);
+    return 0;
 }
 
 void free_result(DBResult *result){
@@ -72,7 +107,8 @@ void free_result(DBResult *result){
 
     free(result);
 }
-DBResult *create_result(){
+
+DBResult *create_result(void){
     DBResult *result = malloc(sizeof(DBResult));
 
     if (!result) {
@@ -88,7 +124,7 @@ DBResult *create_result(){
     return result;
 }
 
-DBResult *db_query(char *query){
+DBResult *db_query(char *query, const char **params, int params_count){
     if(!db){
         handle_db_error("DB query", "Database not initialized");
         return NULL;
@@ -101,9 +137,16 @@ DBResult *db_query(char *query){
         return NULL;
     }
 
+    for(int i=0; i < params_count; i++){
+        if(sqlite3_bind_text(stmt, i+1, params[i], -1, SQLITE_STATIC) != SQLITE_OK){
+            handle_db_error("binding parameters", sqlite3_errmsg(db));
+            sqlite3_finalize(stmt);
+            return NULL;
+        }
+    }
+
     DBResult *result = create_result();
     if(!result){
-        perror("No result?");
         sqlite3_finalize(stmt);
         return NULL;
     }
@@ -137,7 +180,7 @@ DBResult *db_query(char *query){
     while(sqlite3_step(stmt) == SQLITE_ROW){
         if(result->num_rows >= max_rows){
             max_rows *= 2;
-            char ***new_rows = realloc(result->rows, max_rows);
+            char ***new_rows = realloc(result->rows, max_rows * sizeof(char**));
             if(!new_rows){
                 sqlite3_finalize(stmt);
                 free_result(result);
@@ -169,4 +212,30 @@ DBResult *db_query(char *query){
 
     sqlite3_finalize(stmt);
     return result;
+}
+
+
+int db_exists(const char *id){
+    if(!db){
+        handle_db_error("DB query", "Database not initialized");
+        return -1;
+    }
+
+    sqlite3_stmt *stmt;
+    const char *sql = "SELECT ID FROM games WHERE ID = ?";
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        handle_db_error("stmt sqlite3_prepare_v2", sqlite3_errmsg(db));
+        return -1;
+
+    }
+
+    sqlite3_bind_text(stmt, 1, id, -1, SQLITE_STATIC);
+    int exists = 0;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        exists = 1;
+    }
+
+    sqlite3_finalize(stmt);
+    return exists;
 }

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Isrc -Isrc/lib/cJSON -Isrc/cxc
+CFLAGS = -Wall -Wextra -Isrc -Isrc/lib/cJSON -Isrc/cxc -lsqlite3
 SRC_DIR = src
 LIB_DIR = src/lib/cJSON
 SRCS = $(wildcard $(SRC_DIR)/*.c) $(wildcard $(LIB_DIR)/*.c) $(wildcard $(SRC_DIR)/*/*.c)
@@ -8,16 +8,16 @@ SERVER = server
 CXC = cxc
 
 $(SERVER): $(SRCS)
-	make clean
-	make cxc
-	./$(CXC) && $(CC) $(CFLAGS) -o $@ $^
+	@make clean
+	@make cxc
+	@./$(CXC) && $(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -f $(SERVER)
-	rm -f $(CXC)
+	@rm -f $(SERVER)
+	@rm -f $(CXC)
 
 cxc:
-	$(CC) $(CFLAGS) -o $(CXC) src_cxc/main.c
+	@$(CC) $(CFLAGS) -o $(CXC) src_cxc/main.c
 
 dev-serve:
 	@docker exec -it simple-http-server sh -c "cd /home/dev && make && ./server"
